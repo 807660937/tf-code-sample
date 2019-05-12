@@ -33,7 +33,6 @@ def get_dataset_batch(ds_name):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--continue', dest='continue_path', required=False)
-    parser.add_argument('-l', '--loss', default='softmax')
     args = parser.parse_args()
 
     assert args.loss in ['softmax', 'abs-max', 'square-max', 'plus-one-abs-max', 'non-negative-max']
@@ -45,24 +44,8 @@ def main():
     ## build graph
     network = Model()
     placeholders, label_onehot, logits = network.build()
-
-    if args.loss == 'softmax':
-        preds = tf.nn.softmax(logits)
-    elif args.loss == 'abs-max':
-        abs_logits = tf.abs(logits)
-        preds = abs_logits / tf.reduce_sum(abs_logits, axis=1, keepdims=True)
-    elif args.loss == 'square-max':
-        square_logits = logits * logits
-        preds = square_logits / tf.reduce_sum(square_logits, axis=1, keepdims=True)
-    elif args.loss == 'plus-one-abs-max':
-        plus_one_abs_logits = tf.abs(logits) + 1.0
-        preds = plus_one_abs_logits / tf.reduce_sum(plus_one_abs_logits, axis=1, keepdims=True)
-    elif args.loss == 'non-negative-max':
-        relu_logits = tf.nn.relu(logits)
-        preds = relu_logits / tf.reduce_sum(relu_logits, axis=1, keepdims=True)
-    else:
-        raise("Invalid loss type")
-
+    
+    preds = tf.nn.softmax(logits)
     correct_pred = tf.equal(tf.cast(tf.argmax(preds, 1), dtype=tf.int32),
                             tf.cast(tf.argmax(label_onehot, 1), dtype=tf.int32))
     accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
